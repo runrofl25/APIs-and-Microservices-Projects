@@ -38,7 +38,7 @@ app.get("/api/timestamp/:input", (request, response) => {
   //sets up root so it returns an empty object , : collens treeted as a url prams
   let input = request.params.input;
 
-  if (input.includes("-")) {
+  if (input.includes("-") || input.includes(' ')) {
     // if a dash is involved, getTime() returns millieseconds from epoch and sets it to date then response object
     responseObject["unix"] = new Date(input).getTime()
     // toUTCString() calls on any valid date and converts to a UTC string
