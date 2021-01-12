@@ -30,3 +30,11 @@ app.get("/api/hello", function (req, res) {
 var listener = app.listen(process.env.PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port);
 });
+
+//json object javascript object notation (useful for transfering data between server and a web application)
+let responseObject = { } 
+app.get('/api/timestamp/:input', (request, response) => { //sets up root so it returns an empty object , : collens treeted as a url prams
+  let input = request.params.input 
+  
+  response.json(input)
+})
