@@ -1,3 +1,7 @@
+// Recieved Massive help from youtube creator Ganesh H from https://www.youtube.com/channel/UCsbvkXO5gWeh4KI6GoIMThQ and https://www.youtube.com/watch?v=Vcxszof5lnw&ab_channel=GaneshH
+// who explained how to create a timestamp microservice in detail.
+
+
 // server.js
 // where your node app starts
 
@@ -34,7 +38,7 @@ app.get("/api/timestamp/:input", (request, response) => {
   //sets up root so it returns an empty object , : collens treeted as a url prams
   let input = request.params.input;
 
-  if (input.includes("-")) {
+  if (input.includes("-") || input.includes(' ')) {
     // if a dash is involved, getTime() returns millieseconds from epoch and sets it to date then response object
     responseObject["unix"] = new Date(input).getTime()
     // toUTCString() calls on any valid date and converts to a UTC string
@@ -45,7 +49,7 @@ app.get("/api/timestamp/:input", (request, response) => {
     input = parseInt(input)
     
     responseObject['unix'] = new Date(input).getTime() //returning proper data checking for error
-    responseObject['utc'] = new Date(input).toUTCstring()
+    responseObject['utc'] = new Date(input).toUTCString()
   }
 
   if(!responseObject['unix'] || !responseObject['utc']) {
