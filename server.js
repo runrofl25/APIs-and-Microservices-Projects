@@ -1,67 +1,103 @@
-// Recieved Massive help from youtube creator Ganesh H from https://www.youtube.com/channel/UCsbvkXO5gWeh4KI6GoIMThQ and https://www.youtube.com/watch?v=Vcxszof5lnw&ab_channel=GaneshH
-// who explained how to create a timestamp microservice in detail.
+'use strict';
 
+var express = require('express');
+var mongo = require('mongodb');
+var mongoose = require('mongoose');
 
-// server.js
-// where your node app starts
+var cors = require('cors');
 
-// init project
-var express = require("express");
 var app = express();
 
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC
-var cors = require("cors");
-app.use(cors({ optionsSuccessStatus: 200 })); // some legacy browsers choke on 204
+// Basic Configuration 
+var port = process.env.PORT || 3000;
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static("public"));
+/** this project needs a db !! **/ 
+// mongoose.connect(process.env.DB_URI);
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function(req, res) {
-  res.sendFile(__dirname + "/views/index.html");
+app.use(cors());
+
+/** this project needs to parse POST bodies **/
+// you should mount the body-parser here
+
+app.use('/public', express.static(process.cwd() + '/public'));
+
+app.get('/', function(req, res){
+  res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// your first API endpoint...
-app.get("/api/hello", function(req, res) {
-  res.json({ greeting: "hello API" });
+  
+// your first API endpoint... 
+app.get("/api/hello", function (req, res) {
+  res.json({greeting: 'hello API'});
 });
 
-// listen for requests :)
-var listener = app.listen(process.env.PORT, function() {
-  console.log("Your app is listening on port " + listener.address().port);
+
+app.listen(port, function () {
+  console.log('Node.js listening ...');
 });
 
-//json object javascript object notation (useful for transfering data between server and a web application)
-let responseObject = {};
-app.get("/api/timestamp/:input", (request, response) => {
-  //sets up root so it returns an empty object , : collens treeted as a url prams
-  let input = request.params.input;
+/* Database Connection */
+let uri =
+  "mongodb+srv://user1:" +
+  process.env.PW +
+  "@freecodecamp.pekn2.mongodb.net/db1?retryWrites=true&w=majority";
 
-  if (input.includes("-") || input.includes(' ')) {
-    // if a dash is involved, getTime() returns millieseconds from epoch and sets it to date then response object
-    responseObject["unix"] = new Date(input).getTime()
-    // toUTCString() calls on any valid date and converts to a UTC string
-    responseObject['utc'] = new Date(input).toUTCString();
-  } else {
-    //no dash means TimeStamp
-    //parseInt give string and converts to an interger
-    input = parseInt(input)
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+let urlSchema = new mongoose.Schema({
+  original : {type: String, required: true},
+  short: Number
+})
+
+let Url = mongoose.model('Url', urlSchema)
+
+let bodyParser = require('body-parser')
+let responseObject = {}
+app.post('/api/shorturl/new', bodyParser.urlencoded({ extended: false }) , (request, response) => {
+  let inputUrl = request.body['url']
+  
+  let urlRegex = new RegExp(/^[http://www.]/gi) 
+  
+  if(!inputUrl.match(urlRegex)){
+    response.json({error: 'Invalid URL'})
+    return
+  }
     
-    responseObject['unix'] = new Date(input).getTime() //returning proper data checking for error
-    responseObject['utc'] = new Date(input).toUTCString()
-  }
-
-  if(!responseObject['unix'] || !responseObject['utc']) {
-    response.json({error: 'Invalid Date'})
-  }
+  responseObject['original_url'] = inputUrl
   
-  response.json(responseObject);
-});
-
-app.get('/api/timestamp', (request, response) => {
-  responseObject['unix'] = new Date().getTime()
-  responseObject['utc'] = new Date().toUTCString()
+  let inputShort = 1
   
-  response.json(responseObject)
+  Url.findOne({})
+        .sort({short: 'desc'})
+        .exec((error, result) => {
+          if(!error && result != undefined){
+            inputShort = result.short + 1
+          }
+          if(!error){
+            Url.findOneAndUpdate(
+              {original: inputUrl},
+              {original: inputUrl, short: inputShort},
+              {new: true, upsert: true },
+              (error, savedUrl)=> {
+                if(!error){
+                  responseObject['short_url'] = savedUrl.short
+                  response.json(responseObject)
+                }
+              }
+            )
+          }
+  })
+  
+})
+
+app.get('/api/shorturl/:input', (request, response) => {
+  let input = request.params.input
+  
+  Url.findOne({short: input}, (error, result) => {
+    if(!error && result != undefined){
+      response.redirect(result.original)
+    }else{
+      response.json('URL not Found')
+    }
+  })
 })
