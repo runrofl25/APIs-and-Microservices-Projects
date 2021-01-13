@@ -1,3 +1,7 @@
+// Recieved massive help thanks to Ganesh H on youtube https://www.youtube.com/watch?v=dvCIN_pav8o&ab_channel=GaneshH massive credit goes to him on how he explained this project thank you!
+// along side with AFJ from the commets section they both derseve alot of the credit for helping me understand this project!
+
+
 'use strict';
 
 var express = require('express');
